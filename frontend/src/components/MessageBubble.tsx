@@ -148,9 +148,11 @@ export default function MessageBubble({ message, onDelete }: Props) {
         <div className="message-bubble">
           {isUser
             ? message.content
-            : message.imageB64
-              ? <img className="generated-image" src={`data:image/png;base64,${message.imageB64}`} alt="生成图片" />
-              : renderContent(message.content)
+            : message.imageFile
+              ? <img className="generated-image" src={`/api/images/${message.imageFile}`} alt="生成图片" />
+              : message.imageB64
+                ? <img className="generated-image" src={`data:image/png;base64,${message.imageB64}`} alt="生成图片" />
+                : renderContent(message.content)
           }
         </div>
         <div className="message-meta">

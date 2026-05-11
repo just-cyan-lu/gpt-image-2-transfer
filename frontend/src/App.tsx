@@ -126,6 +126,18 @@ export default function App() {
         c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
       ))
       await saveMessage(currentActiveId!, msg)
+      // 保存后用 imageFile 替换内存中的 imageB64，释放大 base64
+      if (imageB64) {
+        const imageFile = `${aiMsgId}.png`
+        setConversations(prev => prev.map(c =>
+          c.id === currentActiveId ? {
+            ...c,
+            messages: c.messages.map(m =>
+              m.id === aiMsgId ? { ...m, imageB64: undefined, imageFile } : m
+            ),
+          } : c
+        ))
+      }
     }
 
     try {

@@ -1,6 +1,7 @@
 import { config } from 'dotenv'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { writeFileSync, unlinkSync, createReadStream, existsSync } from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../../.env.local') })
@@ -13,6 +14,7 @@ import {
   listConversations, getMessages,
   upsertConversation, upsertMessage,
   deleteConversation, deleteMessage, renameConversation,
+  getMessageImageFile, IMAGES_DIR,
 } from './db.js'
 
 const app = new Koa()
@@ -56,13 +58,18 @@ router.delete('/conversations/:id', (ctx) => {
 
 router.put('/messages/:id', (ctx) => {
   const { conversationId, role, content, images, imageB64, model, timestamp } = ctx.request.body
+  let imageFile = null
+  if (imageB64) {
+    imageFile = `${ctx.params.id}.png`
+    writeFileSync(resolve(IMAGES_DIR, imageFile), Buffer.from(imageB64, 'base64'))
+  }
   upsertMessage({
     id: ctx.params.id,
     conversationId,
     role,
     content: content ?? '',
     images: images ? JSON.stringify(images) : null,
-    imageB64: imageB64 ?? null,
+    imageFile,
     model: model ?? null,
     timestamp: new Date(timestamp).getTime(),
   })
@@ -70,8 +77,21 @@ router.put('/messages/:id', (ctx) => {
 })
 
 router.delete('/messages/:id', (ctx) => {
+  const imageFile = getMessageImageFile(ctx.params.id)
+  if (imageFile) {
+    const filePath = resolve(IMAGES_DIR, imageFile)
+    if (existsSync(filePath)) unlinkSync(filePath)
+  }
   deleteMessage(ctx.params.id)
   ctx.body = { ok: true }
+})
+
+router.get('/images/:filename', (ctx) => {
+  const filePath = resolve(IMAGES_DIR, ctx.params.filename)
+  if (!existsSync(filePath)) { ctx.status = 404; return }
+  ctx.set('Content-Type', 'image/png')
+  ctx.set('Cache-Control', 'public, max-age=31536000, immutable')
+  ctx.body = createReadStream(filePath)
 })
 
 // ── 流式对话 ──────────────────────────────────────────────
