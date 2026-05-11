@@ -10,6 +10,8 @@ interface Props {
   onNew: () => void
   onToggleCollapse: () => void
   onToggleTheme: () => void
+  onOpenSettings: () => void
+  onRename: (id: string, title: string) => void
 }
 
 function LogoIcon() {
@@ -72,10 +74,26 @@ function UserIcon() {
   )
 }
 
-export default function Sidebar({ conversations, activeId, collapsed, onSelect, onNew, onToggleCollapse }: Props) {
+export default function Sidebar({ conversations, activeId, collapsed, onSelect, onNew, onToggleCollapse, onOpenSettings, onRename }: Props) {
   const [flyoutOpen, setFlyoutOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState('')
   const flyoutRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const editInputRef = useRef<HTMLInputElement>(null)
+
+  const startEdit = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingId(conv.id)
+    setEditingValue(conv.title)
+    setTimeout(() => editInputRef.current?.select(), 0)
+  }
+
+  const commitEdit = (id: string) => {
+    const trimmed = editingValue.trim()
+    if (trimmed) onRename(id, trimmed)
+    setEditingId(null)
+  }
 
   useEffect(() => {
     if (!flyoutOpen) return
@@ -101,7 +119,7 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
       <div className="sidebar-header">
         <div className="logo">
           <div className="logo-icon"><LogoIcon /></div>
-          <span className="logo-text">AuraChat</span>
+          <span className="logo-text">Chat</span>
         </div>
         <button className="collapse-btn" onClick={onToggleCollapse} title={collapsed ? '展开菜单' : '收起菜单'}>
           <ChevronLeftIcon />
@@ -126,7 +144,22 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
             >
               <div className="conv-icon"><ChatIcon /></div>
               <div className="conv-info">
-                <div className="conv-title">{conv.title}</div>
+                {editingId === conv.id ? (
+                  <input
+                    ref={editInputRef}
+                    className="conv-rename-input"
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onBlur={() => commitEdit(conv.id)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(conv.id)
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <div className="conv-title" onDoubleClick={e => startEdit(conv, e)}>{conv.title}</div>
+                )}
                 <div className="conv-preview">{conv.preview}</div>
               </div>
             </div>
@@ -163,7 +196,7 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
       )}
 
       <div className="sidebar-footer">
-        <button className="footer-btn" title={collapsed ? '设置' : undefined}>
+        <button className="footer-btn" onClick={onOpenSettings} title={collapsed ? '设置' : undefined}>
           <SettingsIcon />
           <span>设置</span>
         </button>

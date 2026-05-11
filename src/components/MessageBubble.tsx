@@ -137,7 +137,12 @@ export default function MessageBubble({ message }: Props) {
       </div>
       <div className="message-content">
         <div className="message-bubble">
-          {isUser ? message.content : renderContent(message.content)}
+          {isUser
+            ? message.content
+            : message.imageB64
+              ? <img className="generated-image" src={`data:image/png;base64,${message.imageB64}`} alt="生成图片" />
+              : renderContent(message.content)
+          }
         </div>
         <span className="message-time">{formatTime(message.timestamp)}</span>
       </div>

@@ -90,7 +90,7 @@ export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onS
         ) : (
           <>
             {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
-            {isTyping && (
+            {isTyping && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="message-row assistant">
                 <div className="message-avatar">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:15,height:15}}>
