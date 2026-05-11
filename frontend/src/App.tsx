@@ -1,10 +1,10 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import ChatInput, { SendPayload } from './components/ChatInput'
 import ApiSettings from './components/ApiSettings'
 import { Conversation, Message } from './types'
-import { streamChat, generateImage } from './api'
+import { streamChat, generateImage, fetchConversations, fetchMessages, saveConversation, saveMessage, apiRenameConversation, apiDeleteConversation, apiDeleteMessage } from './api'
 import './index.css'
 
 function genId() {
@@ -25,6 +25,24 @@ export default function App() {
   const abortRef = useRef<AbortController | null>(null)
 
   const activeConv = conversations.find(c => c.id === activeId) ?? null
+
+  // 启动时加载对话列表
+  useEffect(() => {
+    fetchConversations().then(convs => {
+      setConversations(convs)
+      if (convs.length > 0) setActiveId(convs[0].id)
+    })
+  }, [])
+
+  // 切换对话时懒加载消息
+  useEffect(() => {
+    if (!activeId) return
+    const conv = conversations.find(c => c.id === activeId)
+    if (!conv || conv.messages.length > 0) return
+    fetchMessages(activeId).then(msgs => {
+      setConversations(prev => prev.map(c => c.id === activeId ? { ...c, messages: msgs } : c))
+    })
+  }, [activeId])
 
   const toggleTheme = useCallback(() => {
     setTheme(t => {
@@ -63,6 +81,7 @@ export default function App() {
       setConversations(prev => [newConv, ...prev])
       setActiveId(id)
       currentActiveId = id
+      await saveConversation(newConv)
     }
 
     const userMsg: Message = {
@@ -74,48 +93,61 @@ export default function App() {
       timestamp: new Date(),
     }
 
+    let updatedConv: Conversation | null = null
     let currentHistory: Message[] = []
     setConversations(prev => prev.map(c => {
       if (c.id !== currentActiveId) return c
       const messages = [...c.messages, userMsg]
       currentHistory = c.messages
       const preview = text || (images.length > 0 ? `[图片 ×${images.length}]` : '')
-      return {
+      updatedConv = {
         ...c,
         messages,
         preview: preview.slice(0, 40) + (preview.length > 40 ? '...' : ''),
         title: c.title === '新建对话' ? (text.slice(0, 20) || '新建对话') : c.title,
         updatedAt: new Date(),
       }
+      return updatedConv
     }))
+
+    if (updatedConv) {
+      await saveConversation(updatedConv)
+      await saveMessage(currentActiveId, userMsg)
+    }
 
     setIsTyping(true)
     abortRef.current = new AbortController()
 
     const aiMsgId = genId()
 
-    const addAiMsg = (content: string, imageB64?: string) => {
+    const addAiMsg = async (content: string, imageB64?: string) => {
       const msg: Message = { id: aiMsgId, role: 'assistant', content, imageB64, timestamp: new Date() }
       setConversations(prev => prev.map(c =>
         c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
       ))
+      await saveMessage(currentActiveId!, msg)
     }
 
     try {
       if (model === 'gpt-image-2') {
         const b64 = await generateImage(text, images, abortRef.current.signal)
-        addAiMsg('', b64)
+        await addAiMsg('', b64)
       } else {
         let added = false
+        let finalContent = ''
         await streamChat(
           currentHistory,
           text,
           images,
           model,
           (delta) => {
+            finalContent += delta
             if (!added) {
               added = true
-              addAiMsg(delta)
+              const msg: Message = { id: aiMsgId, role: 'assistant', content: delta, timestamp: new Date() }
+              setConversations(prev => prev.map(c =>
+                c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
+              ))
             } else {
               setConversations(prev => prev.map(c => {
                 if (c.id !== currentActiveId) return c
@@ -130,11 +162,14 @@ export default function App() {
           },
           abortRef.current.signal,
         )
+        // 流结束后保存完整内容
+        const finalMsg: Message = { id: aiMsgId, role: 'assistant', content: finalContent, timestamp: new Date() }
+        await saveMessage(currentActiveId!, finalMsg)
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return
       const errText = err instanceof Error ? err.message : String(err)
-      addAiMsg(`请求失败：${errText}`)
+      await addAiMsg(`请求失败：${errText}`)
     } finally {
       setIsTyping(false)
       abortRef.current = null
@@ -145,9 +180,29 @@ export default function App() {
     setSuggestionText(text)
   }, [])
 
-  const handleRename = useCallback((id: string, title: string) => {
+  const handleRename = useCallback(async (id: string, title: string) => {
     setConversations(prev => prev.map(c => c.id === id ? { ...c, title } : c))
+    await apiRenameConversation(id, title)
   }, [])
+
+  const handleDeleteConversation = useCallback(async (id: string) => {
+    setConversations(prev => prev.filter(c => c.id !== id))
+    if (activeId === id) {
+      setConversations(prev => {
+        const remaining = prev.filter(c => c.id !== id)
+        setActiveId(remaining.length > 0 ? remaining[0].id : null)
+        return remaining
+      })
+    }
+    await apiDeleteConversation(id)
+  }, [activeId])
+
+  const handleDeleteMessage = useCallback(async (msgId: string) => {
+    setConversations(prev => prev.map(c =>
+      c.id === activeId ? { ...c, messages: c.messages.filter(m => m.id !== msgId) } : c
+    ))
+    await apiDeleteMessage(msgId)
+  }, [activeId])
 
   return (
     <div className="app-layout">
@@ -162,6 +217,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setShowSettings(true)}
         onRename={handleRename}
+        onDeleteConversation={handleDeleteConversation}
       />
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
         <ChatArea
@@ -170,6 +226,7 @@ export default function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           onSuggestion={handleSuggestion}
+          onDeleteMessage={handleDeleteMessage}
         />
         <ChatInput
           onSend={handleSend}

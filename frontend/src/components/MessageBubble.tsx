@@ -2,6 +2,7 @@ import { Message } from '../types'
 
 interface Props {
   message: Message
+  onDelete: (id: string) => void
 }
 
 function formatTime(d: Date) {
@@ -127,7 +128,15 @@ function inlineRender(text: string): React.ReactNode {
   })
 }
 
-export default function MessageBubble({ message }: Props) {
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l.8 9.5A.5.5 0 0 0 4.3 14h7.4a.5.5 0 0 0 .5-.5L13 4" />
+    </svg>
+  )
+}
+
+export default function MessageBubble({ message, onDelete }: Props) {
   const isUser = message.role === 'user'
 
   return (
@@ -144,7 +153,16 @@ export default function MessageBubble({ message }: Props) {
               : renderContent(message.content)
           }
         </div>
-        <span className="message-time">{formatTime(message.timestamp)}</span>
+        <div className="message-meta">
+          <span className="message-time">{formatTime(message.timestamp)}</span>
+          <button
+            className="msg-delete-btn"
+            title="删除消息"
+            onClick={() => onDelete(message.id)}
+          >
+            <TrashIcon />
+          </button>
+        </div>
       </div>
     </div>
   )

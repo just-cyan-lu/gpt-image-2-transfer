@@ -4,10 +4,16 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../../.env.local') })
+
 import Koa from 'koa'
 import Router from '@koa/router'
 import { koaBody } from 'koa-body'
 import fetch from 'node-fetch'
+import {
+  listConversations, getMessages,
+  upsertConversation, upsertMessage,
+  deleteConversation, deleteMessage, renameConversation,
+} from './db.js'
 
 const app = new Koa()
 const router = new Router({ prefix: '/api' })
@@ -16,9 +22,59 @@ const BASE_URL = (process.env.OPENAI_BASE_URL || '').replace(/\/$/, '')
 const API_KEY = process.env.OPENAI_API_KEY || ''
 const PORT = parseInt(process.env.PORT || '3001', 10)
 
-app.use(koaBody())
+app.use(koaBody({ jsonLimit: '50mb' }))
 
-// 流式对话
+// ── 对话列表 ──────────────────────────────────────────────
+router.get('/conversations', (ctx) => {
+  ctx.body = listConversations()
+})
+
+router.get('/conversations/:id/messages', (ctx) => {
+  const rows = getMessages(ctx.params.id)
+  ctx.body = rows.map(r => ({
+    ...r,
+    images: r.images ? JSON.parse(r.images) : undefined,
+    timestamp: new Date(r.timestamp),
+  }))
+})
+
+router.put('/conversations/:id', (ctx) => {
+  const { title, preview, updatedAt } = ctx.request.body
+  upsertConversation({ id: ctx.params.id, title, preview, updatedAt: new Date(updatedAt).getTime() })
+  ctx.body = { ok: true }
+})
+
+router.patch('/conversations/:id/rename', (ctx) => {
+  renameConversation(ctx.params.id, ctx.request.body.title)
+  ctx.body = { ok: true }
+})
+
+router.delete('/conversations/:id', (ctx) => {
+  deleteConversation(ctx.params.id)
+  ctx.body = { ok: true }
+})
+
+router.put('/messages/:id', (ctx) => {
+  const { conversationId, role, content, images, imageB64, model, timestamp } = ctx.request.body
+  upsertMessage({
+    id: ctx.params.id,
+    conversationId,
+    role,
+    content: content ?? '',
+    images: images ? JSON.stringify(images) : null,
+    imageB64: imageB64 ?? null,
+    model: model ?? null,
+    timestamp: new Date(timestamp).getTime(),
+  })
+  ctx.body = { ok: true }
+})
+
+router.delete('/messages/:id', (ctx) => {
+  deleteMessage(ctx.params.id)
+  ctx.body = { ok: true }
+})
+
+// ── 流式对话 ──────────────────────────────────────────────
 router.post('/chat', async (ctx) => {
   const { model, messages } = ctx.request.body
 
@@ -45,9 +101,11 @@ router.post('/chat', async (ctx) => {
   ctx.body = upstream.body
 })
 
-// 生图 / 编辑图
+// ── 生图 / 编辑图 ─────────────────────────────────────────
 router.post('/image', async (ctx) => {
   const { prompt, images } = ctx.request.body
+
+  console.log('[image] request', { prompt, imageCount: images?.length ?? 0 })
 
   let upstream
 
@@ -81,17 +139,21 @@ router.post('/image', async (ctx) => {
 
   if (!upstream.ok) {
     const err = await upstream.text()
+    console.log('[image] upstream error', upstream.status, err)
     ctx.status = upstream.status
     ctx.body = err
     return
   }
 
   const json = await upstream.json()
+  console.log('[image] response ok, b64_json length:', json.data[0].b64_json?.length)
   ctx.body = { b64_json: json.data[0].b64_json }
 })
 
 app.use(router.routes()).use(router.allowedMethods())
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`backend running on http://localhost:${PORT}`)
 })
+server.timeout = 0
+server.keepAliveTimeout = 0

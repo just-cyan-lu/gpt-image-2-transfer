@@ -12,6 +12,7 @@ interface Props {
   onToggleTheme: () => void
   onOpenSettings: () => void
   onRename: (id: string, title: string) => void
+  onDeleteConversation: (id: string) => void
 }
 
 function LogoIcon() {
@@ -56,6 +57,22 @@ function HistoryIcon() {
   )
 }
 
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 2l3 3-8 8H3v-3l8-8z" />
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3 4l.8 9.5A.5.5 0 0 0 4.3 14h7.4a.5.5 0 0 0 .5-.5L13 4" />
+    </svg>
+  )
+}
+
 function SettingsIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -74,7 +91,7 @@ function UserIcon() {
   )
 }
 
-export default function Sidebar({ conversations, activeId, collapsed, onSelect, onNew, onToggleCollapse, onOpenSettings, onRename }: Props) {
+export default function Sidebar({ conversations, activeId, collapsed, onSelect, onNew, onToggleCollapse, onOpenSettings, onRename, onDeleteConversation }: Props) {
   const [flyoutOpen, setFlyoutOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
@@ -158,9 +175,25 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
                     onClick={e => e.stopPropagation()}
                   />
                 ) : (
-                  <div className="conv-title" onDoubleClick={e => startEdit(conv, e)}>{conv.title}</div>
+                  <div className="conv-title">{conv.title}</div>
                 )}
                 <div className="conv-preview">{conv.preview}</div>
+              </div>
+              <div className="conv-actions">
+                <button
+                  className="conv-action-btn"
+                  title="重命名"
+                  onClick={e => startEdit(conv, e)}
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  className="conv-action-btn conv-action-delete"
+                  title="删除对话"
+                  onClick={e => { e.stopPropagation(); onDeleteConversation(conv.id) }}
+                >
+                  <TrashIcon />
+                </button>
               </div>
             </div>
           ))}

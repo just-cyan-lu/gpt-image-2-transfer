@@ -8,6 +8,7 @@ interface Props {
   theme: 'dark' | 'light'
   onToggleTheme: () => void
   onSuggestion: (text: string) => void
+  onDeleteMessage: (id: string) => void
 }
 
 function SunIcon() {
@@ -52,7 +53,7 @@ const suggestions = [
   '推荐几本关于系统设计的书',
 ]
 
-export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onSuggestion }: Props) {
+export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onSuggestion, onDeleteMessage }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -89,7 +90,7 @@ export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onS
           </div>
         ) : (
           <>
-            {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
+            {messages.map(msg => <MessageBubble key={msg.id} message={msg} onDelete={onDeleteMessage} />)}
             {isTyping && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="message-row assistant">
                 <div className="message-avatar">
