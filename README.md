@@ -103,6 +103,7 @@ npm run install      # 安装所有依赖
 - 生成的图片存储在 `data/images/` 目录，不会存入数据库
 - 对话数据存储在本地 SQLite 数据库中
 - 建议定期备份 `data/` 目录
+- 全部都是vibe coding，人类看一眼代码就会爆炸
 
 ## License
 
