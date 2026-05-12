@@ -4,7 +4,7 @@ import MessageBubble from './MessageBubble'
 
 interface Props {
   messages: Message[]
-  isTyping: boolean
+  isGenerating: boolean
   theme: 'dark' | 'light'
   onToggleTheme: () => void
   onSuggestion: (text: string) => void
@@ -35,32 +35,31 @@ function MoonIcon() {
   )
 }
 
-function BotIcon() {
+function ImageGenIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M12 2a3 3 0 0 1 3 3v6H9V5a3 3 0 0 1 3-3z" />
-      <circle cx="9" cy="16" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="16" r="1" fill="currentColor" stroke="none" />
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
     </svg>
   )
 }
 
 const suggestions = [
-  '解释量子计算的基本原理',
-  '帮我写一个 Python 爬虫',
-  'CSS 动画有哪些技巧？',
-  '推荐几本关于系统设计的书',
+  '一只在星空下奔跑的赛博朋克狐狸',
+  '水彩风格的日本樱花街道',
+  '未来城市的鸟瞰图，霓虹灯光',
+  '极简主义风格的山脉剪影',
 ]
 
-export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onSuggestion, onDeleteMessage }: Props) {
+export default function ChatArea({ messages, isGenerating, theme, onToggleTheme, onSuggestion, onDeleteMessage }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [messages, isGenerating])
 
   const handleScroll = () => {
     if (!listRef.current) return
@@ -79,9 +78,9 @@ export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onS
       <div className="message-list" ref={listRef} onScroll={handleScroll}>
         {messages.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon"><BotIcon /></div>
-            <h2>有什么我可以帮你的？</h2>
-            <p>发送消息开始对话，或者从下面的建议中选择一个</p>
+            <div className="empty-icon"><ImageGenIcon /></div>
+            <h2>描述你想要的图片</h2>
+            <p>输入提示词生成图片，或上传参考图进行编辑</p>
             <div className="empty-suggestions">
               {suggestions.map(s => (
                 <button key={s} className="suggestion-chip" onClick={() => onSuggestion(s)}>{s}</button>
@@ -91,14 +90,13 @@ export default function ChatArea({ messages, isTyping, theme, onToggleTheme, onS
         ) : (
           <>
             {messages.map(msg => <MessageBubble key={msg.id} message={msg} onDelete={onDeleteMessage} />)}
-            {isTyping && messages[messages.length - 1]?.role !== 'assistant' && (
+            {isGenerating && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="message-row assistant">
                 <div className="message-avatar">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:15,height:15}}>
-                    <rect x="2" y="6" width="12" height="8" rx="2" />
-                    <path d="M5 6V5a3 3 0 0 1 6 0v1" />
-                    <circle cx="5.5" cy="10" r="1" fill="currentColor" stroke="none" />
-                    <circle cx="10.5" cy="10" r="1" fill="currentColor" stroke="none" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:15,height:15}}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
                   </svg>
                 </div>
                 <div className="message-content">

@@ -136,20 +136,20 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
       <div className="sidebar-header">
         <div className="logo">
           <div className="logo-icon"><LogoIcon /></div>
-          <span className="logo-text">GPT中转</span>
+          <span className="logo-text">生图工具</span>
         </div>
         <button className="collapse-btn" onClick={onToggleCollapse} title={collapsed ? '展开菜单' : '收起菜单'}>
           <ChevronLeftIcon />
         </button>
       </div>
 
-      <button className="new-chat-btn" onClick={onNew} title={collapsed ? '新建对话' : undefined}>
+      <button className="new-chat-btn" onClick={onNew} title={collapsed ? '新建生图' : undefined}>
         <PlusIcon />
-        <span className="btn-text">新建对话</span>
+        <span className="btn-text">新建生图</span>
       </button>
 
       {/* Expanded: label + list */}
-      {!collapsed && <div className="conv-list-label">对话历史</div>}
+      {!collapsed && <div className="conv-list-label">生图历史</div>}
 
       {!collapsed && (
         <div className="conv-list">
@@ -207,13 +207,13 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
             ref={triggerRef}
             className="conv-collapsed-trigger"
             onClick={() => setFlyoutOpen(o => !o)}
-            title="最近对话"
+            title="最近生图"
           >
             <HistoryIcon />
           </button>
 
           <div ref={flyoutRef} className={`conv-flyout${flyoutOpen ? ' open' : ''}`}>
-            <div className="conv-flyout-title">最近对话</div>
+            <div className="conv-flyout-title">最近生图</div>
             {conversations.map(conv => (
               <div
                 key={conv.id}

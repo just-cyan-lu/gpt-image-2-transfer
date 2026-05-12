@@ -90,13 +90,13 @@ export function renameConversation(id, title) {
 
 export function getConfig() {
   if (!existsSync(CONFIG_PATH)) {
-    return { baseUrl: '', chatKey: '', imageKey: '' }
+    return { baseUrl: '', imageKey: '' }
   }
   try {
     const content = readFileSync(CONFIG_PATH, 'utf-8')
     return JSON.parse(content)
   } catch {
-    return { baseUrl: '', chatKey: '', imageKey: '' }
+    return { baseUrl: '', imageKey: '' }
   }
 }
 

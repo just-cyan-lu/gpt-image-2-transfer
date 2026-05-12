@@ -1,23 +1,9 @@
 import { useRef, useState, useEffect, KeyboardEvent } from 'react'
-import { ModelId, ImageAttachment } from '../types'
+import { ImageAttachment } from '../types'
 
-type ModeType = 'chat' | 'image'
-
-const CHAT_MODELS: { id: ModelId; label: string }[] = [
-  { id: 'gpt-5.5',     label: 'GPT 5.5' },
-  { id: 'gpt-5.4',     label: 'GPT 5.4' },
-  { id: 'gpt-5.4-mini',label: 'GPT 5.4 mini' },
-]
-
-const IMAGE_MODELS: { id: ModelId; label: string }[] = [
-  { id: 'gpt-image-2', label: 'GPT Image 2' },
-]
-
-interface SendPayload {
+export interface SendPayload {
   text: string
   images: ImageAttachment[]
-  model: ModelId
-  mode: ModeType
   size?: string
   quality?: string
 }
@@ -57,26 +43,13 @@ function CloseIcon() {
   )
 }
 
-export type { SendPayload }
-
 export default function ChatInput({ onSend, disabled, initialValue, onClearInitial }: Props) {
   const [value, setValue] = useState('')
   const [images, setImages] = useState<ImageAttachment[]>([])
-  const [mode, setMode] = useState<ModeType>('chat')
-  const [model, setModel] = useState<ModelId>('gpt-5.5')
   const [size, setSize] = useState('auto')
   const [quality, setQuality] = useState('auto')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // 切换模式时自动切换默认模型
-  useEffect(() => {
-    if (mode === 'chat') {
-      setModel('gpt-5.5')
-    } else {
-      setModel('gpt-image-2')
-    }
-  }, [mode])
 
   useEffect(() => {
     if (initialValue) {
@@ -96,12 +69,7 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
   const handleSend = () => {
     const trimmed = value.trim()
     if ((!trimmed && images.length === 0) || disabled) return
-    const payload: SendPayload = { text: trimmed, images, model, mode }
-    if (mode === 'image') {
-      payload.size = size
-      payload.quality = quality
-    }
-    onSend(payload)
+    onSend({ text: trimmed, images, size, quality })
     setValue('')
     setImages([])
     if (textareaRef.current) {
@@ -122,7 +90,6 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
       const reader = new FileReader()
       reader.onload = () => {
         const result = reader.result as string
-        // result is "data:image/png;base64,xxxx"
         const base64 = result.split(',')[1]
         setImages(prev => [...prev, { name: file.name, mimeType: file.type, base64 }])
       }
@@ -155,7 +122,7 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
         <textarea
           ref={textareaRef}
           className="chat-textarea"
-          placeholder="发送消息..."
+          placeholder="描述你想生成的图片..."
           value={value}
           onChange={e => { setValue(e.target.value); autoResize() }}
           onKeyDown={handleKeyDown}
@@ -164,65 +131,42 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
         />
         <div className="input-toolbar">
           <select
-            className="mode-select"
-            value={mode}
-            onChange={e => setMode(e.target.value as ModeType)}
+            className="image-param-select"
+            value={size}
+            onChange={e => setSize(e.target.value)}
             disabled={disabled}
+            title="图片大小"
           >
-            <option value="chat">聊天</option>
-            <option value="image">生图</option>
+            <option value="auto">自动</option>
+            <option value="1024x1024">1024×1024 (方形)</option>
+            <option value="1536x1024">1536×1024 (横向)</option>
+            <option value="1024x1536">1024×1536 (竖向)</option>
+            <option value="2048x2048">2048×2048 (2K方形)</option>
+            <option value="2048x1152">2048×1152 (2K横向)</option>
+            <option value="3840x2160">3840×2160 (4K横向)</option>
+            <option value="2160x3840">2160×3840 (4K竖向)</option>
           </select>
           <select
-            className="model-select"
-            value={model}
-            onChange={e => setModel(e.target.value as ModelId)}
+            className="image-param-select"
+            value={quality}
+            onChange={e => setQuality(e.target.value)}
             disabled={disabled}
+            title="图片质量"
           >
-            {(mode === 'chat' ? CHAT_MODELS : IMAGE_MODELS).map(m => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
+            <option value="auto">自动</option>
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
           </select>
-          {mode === 'image' && (
-            <>
-              <select
-                className="image-param-select"
-                value={size}
-                onChange={e => setSize(e.target.value)}
-                disabled={disabled}
-                title="图片大小"
-              >
-                <option value="auto">自动</option>
-                <option value="1024x1024">1024×1024 (方形)</option>
-                <option value="1536x1024">1536×1024 (横向)</option>
-                <option value="1024x1536">1024×1536 (竖向)</option>
-                <option value="2048x2048">2048×2048 (2K方形)</option>
-                <option value="2048x1152">2048×1152 (2K横向)</option>
-                <option value="3840x2160">3840×2160 (4K横向)</option>
-                <option value="2160x3840">2160×3840 (4K竖向)</option>
-              </select>
-              <select
-                className="image-param-select"
-                value={quality}
-                onChange={e => setQuality(e.target.value)}
-                disabled={disabled}
-                title="图片质量"
-              >
-                <option value="auto">自动</option>
-                <option value="low">低</option>
-                <option value="medium">中</option>
-                <option value="high">高</option>
-              </select>
-              <button
-                className="image-upload-btn"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled}
-                title="上传图片"
-              >
-                <ImageIcon />
-                <span>图片</span>
-              </button>
-            </>
-          )}
+          <button
+            className="image-upload-btn"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            title="上传参考图片"
+          >
+            <ImageIcon />
+            <span>参考图</span>
+          </button>
           <div className="toolbar-spacer" />
           <button
             className="send-btn"
@@ -230,7 +174,7 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
             disabled={!canSend}
           >
             <SendIcon />
-            <span>发送</span>
+            <span>生成</span>
           </button>
         </div>
         <input
@@ -243,7 +187,7 @@ export default function ChatInput({ onSend, disabled, initialValue, onClearIniti
         />
       </div>
       <div className="input-footer">
-        <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行
+        <kbd>Enter</kbd> 生成 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行
       </div>
     </div>
   )

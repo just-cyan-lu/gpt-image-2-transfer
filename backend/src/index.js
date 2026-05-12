@@ -97,48 +97,9 @@ router.get('/config', (ctx) => {
 })
 
 router.post('/config', (ctx) => {
-  const { baseUrl, chatKey, imageKey } = ctx.request.body
-  saveConfig({ baseUrl, chatKey, imageKey })
+  const { baseUrl, imageKey } = ctx.request.body
+  saveConfig({ baseUrl, imageKey })
   ctx.body = { ok: true }
-})
-
-// ── 流式对话 ──────────────────────────────────────────────
-router.post('/chat', async (ctx) => {
-  console.log('[chat] received request:', ctx.request.body)
-  const { model, messages } = ctx.request.body
-  const config = getConfig()
-  const apiKey = config.chatKey
-  const baseUrl = config.baseUrl
-
-  if (!apiKey || !baseUrl) {
-    console.log('[chat] missing config')
-    ctx.status = 400
-    ctx.body = '请先在设置中配置 API 地址和聊天 Key'
-    return
-  }
-  console.log('[chat] forwarding to:', baseUrl)
-
-  const upstream = await fetch(`${baseUrl}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ model, messages, stream: true }),
-  })
-
-  if (!upstream.ok) {
-    const err = await upstream.text()
-    ctx.status = upstream.status
-    ctx.body = err
-    return
-  }
-
-  ctx.status = 200
-  ctx.set('Content-Type', 'text/event-stream')
-  ctx.set('Cache-Control', 'no-cache')
-  ctx.set('Connection', 'keep-alive')
-  ctx.body = upstream.body
 })
 
 // ── 生图 / 编辑图 ─────────────────────────────────────────

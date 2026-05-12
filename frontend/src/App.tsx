@@ -4,7 +4,7 @@ import ChatArea from './components/ChatArea'
 import ChatInput, { SendPayload } from './components/ChatInput'
 import ApiSettings from './components/ApiSettings'
 import { Conversation, Message } from './types'
-import { streamChat, generateImage, fetchConversations, fetchMessages, saveConversation, saveMessage, apiRenameConversation, apiDeleteConversation, apiDeleteMessage } from './api'
+import { generateImage, fetchConversations, fetchMessages, saveConversation, saveMessage, apiRenameConversation, apiDeleteConversation, apiDeleteMessage } from './api'
 import './index.css'
 
 function genId() {
@@ -19,14 +19,13 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [suggestionText, setSuggestionText] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
   const activeConv = conversations.find(c => c.id === activeId) ?? null
 
-  // 启动时加载对话列表
   useEffect(() => {
     fetchConversations().then(convs => {
       setConversations(convs)
@@ -34,7 +33,6 @@ export default function App() {
     })
   }, [])
 
-  // 切换对话时懒加载消息
   useEffect(() => {
     if (!activeId) return
     const conv = conversations.find(c => c.id === activeId)
@@ -56,8 +54,8 @@ export default function App() {
     const id = genId()
     const newConv: Conversation = {
       id,
-      title: '新建对话',
-      preview: '开始新的对话...',
+      title: '新建生图',
+      preview: '开始新的生图...',
       messages: [],
       updatedAt: new Date(),
     }
@@ -65,7 +63,7 @@ export default function App() {
     setActiveId(id)
   }, [])
 
-  const handleSend = useCallback(async ({ text, images, model, mode, size, quality }: SendPayload) => {
+  const handleSend = useCallback(async ({ text, images, size, quality }: SendPayload) => {
     let currentActiveId = activeId
 
     const userMsg: Message = {
@@ -73,13 +71,12 @@ export default function App() {
       role: 'user',
       content: text,
       images: images.length > 0 ? images : undefined,
-      model,
       timestamp: new Date(),
     }
 
     if (!currentActiveId) {
       const id = genId()
-      const title = text.slice(0, 20) || '新建对话'
+      const title = text.slice(0, 20) || '新建生图'
       const preview = text || (images.length > 0 ? `[图片 ×${images.length}]` : '')
       const newConv: Conversation = {
         id,
@@ -103,7 +100,7 @@ export default function App() {
           ...c,
           messages,
           preview: preview.slice(0, 40) + (preview.length > 40 ? '...' : ''),
-          title: c.title === '新建对话' ? (text.slice(0, 20) || '新建对话') : c.title,
+          title: c.title === '新建生图' ? (text.slice(0, 20) || '新建生图') : c.title,
           updatedAt: new Date(),
         }
         return updatedConv
@@ -114,9 +111,7 @@ export default function App() {
       }
     }
 
-    const currentHistory = conversations.find(c => c.id === currentActiveId)?.messages.slice(0, -1) ?? []
-
-    setIsTyping(true)
+    setIsGenerating(true)
     abortRef.current = new AbortController()
 
     const aiMsgId = genId()
@@ -127,7 +122,6 @@ export default function App() {
         c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
       ))
       await saveMessage(currentActiveId!, msg)
-      // 保存后用 imageFile 替换内存中的 imageB64，释放大 base64
       if (imageB64) {
         const imageFile = `${aiMsgId}.png`
         setConversations(prev => prev.map(c =>
@@ -142,49 +136,14 @@ export default function App() {
     }
 
     try {
-      if (mode === 'image') {
-        const b64 = await generateImage(text, images, size, quality, abortRef.current.signal)
-        await addAiMsg('', b64)
-      } else {
-        let added = false
-        let finalContent = ''
-        await streamChat(
-          currentHistory,
-          text,
-          images,
-          model,
-          (delta) => {
-            finalContent += delta
-            if (!added) {
-              added = true
-              const msg: Message = { id: aiMsgId, role: 'assistant', content: delta, timestamp: new Date() }
-              setConversations(prev => prev.map(c =>
-                c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
-              ))
-            } else {
-              setConversations(prev => prev.map(c => {
-                if (c.id !== currentActiveId) return c
-                return {
-                  ...c,
-                  messages: c.messages.map(m =>
-                    m.id === aiMsgId ? { ...m, content: m.content + delta } : m
-                  ),
-                }
-              }))
-            }
-          },
-          abortRef.current.signal,
-        )
-        // 流结束后保存完整内容
-        const finalMsg: Message = { id: aiMsgId, role: 'assistant', content: finalContent, timestamp: new Date() }
-        await saveMessage(currentActiveId!, finalMsg)
-      }
+      const b64 = await generateImage(text, images, size, quality, abortRef.current.signal)
+      await addAiMsg('', b64)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return
       const errText = err instanceof Error ? err.message : String(err)
-      await addAiMsg(`请求失败：${errText}`)
+      await addAiMsg(`生成失败：${errText}`)
     } finally {
-      setIsTyping(false)
+      setIsGenerating(false)
       abortRef.current = null
     }
   }, [activeId])
@@ -235,7 +194,7 @@ export default function App() {
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
         <ChatArea
           messages={activeConv?.messages ?? []}
-          isTyping={isTyping}
+          isGenerating={isGenerating}
           theme={theme}
           onToggleTheme={toggleTheme}
           onSuggestion={handleSuggestion}
@@ -243,7 +202,7 @@ export default function App() {
         />
         <ChatInput
           onSend={handleSend}
-          disabled={isTyping}
+          disabled={isGenerating}
           initialValue={suggestionText}
           onClearInitial={() => setSuggestionText('')}
         />

@@ -6,17 +6,14 @@ interface Props {
 
 export default function ApiSettings({ onClose }: Props) {
   const [baseUrl, setBaseUrl] = useState('')
-  const [chatKey, setChatKey] = useState('')
   const [imageKey, setImageKey] = useState('')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    // 从后端加载配置
     fetch('/api/config')
       .then(res => res.json())
       .then(config => {
         setBaseUrl(config.baseUrl || '')
-        setChatKey(config.chatKey || '')
         setImageKey(config.imageKey || '')
       })
       .catch(err => {
@@ -31,7 +28,6 @@ export default function ApiSettings({ onClose }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           baseUrl: baseUrl.trim(),
-          chatKey: chatKey.trim(),
           imageKey: imageKey.trim(),
         }),
       })
@@ -56,16 +52,7 @@ export default function ApiSettings({ onClose }: Props) {
               type="text"
               value={baseUrl}
               onChange={e => setBaseUrl(e.target.value)}
-              placeholder="https://bmai.kun8.vip"
-            />
-          </label>
-          <label>
-            <span>聊天 API Key</span>
-            <input
-              type="password"
-              value={chatKey}
-              onChange={e => setChatKey(e.target.value)}
-              placeholder="sk-..."
+              placeholder="https://your-api-proxy.com"
             />
           </label>
           <label>

@@ -1,5 +1,3 @@
-export type ModelId = 'gpt-image-2' | 'gpt-5.5' | 'gpt-5.4' | 'gpt-5.4-mini'
-
 export interface ImageAttachment {
   name: string
   mimeType: string
@@ -13,7 +11,6 @@ export interface Message {
   images?: ImageAttachment[]
   imageB64?: string    // 生图时前端临时持有，保存后由后端写文件
   imageFile?: string   // 保存后后端返回的文件名，用于展示
-  model?: ModelId
   timestamp: Date
 }
 
