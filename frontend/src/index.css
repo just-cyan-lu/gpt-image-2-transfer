@@ -1,8 +1,8 @@
 /* ─── CSS Variables ─── */
 :root {
-  --orange: #FF5700;
-  --cyan: #00F4FF;
-  --blue: #007EFF;
+  --orange: #FF4C00;
+  --cyan: #B1FF62;
+  --blue: #02ACD1;
 
   /* Dark theme */
   --bg-primary: #0D0F14;
@@ -22,11 +22,11 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.6);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.7);
-  --shadow-blue: 0 0 24px rgba(0,126,255,0.2);
+  --shadow-blue: 0 0 24px rgba(2,172,209,0.2);
 
-  --accent: #007EFF;
-  --accent-dim: rgba(0, 126, 255, 0.12);
-  --accent-border: rgba(0, 126, 255, 0.25);
+  --accent: #02ACD1;
+  --accent-dim: rgba(2, 172, 209, 0.12);
+  --accent-border: rgba(2, 172, 209, 0.25);
 }
 
 [data-theme="light"] {
@@ -47,10 +47,10 @@
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
-  --shadow-blue: 0 0 24px rgba(0,126,255,0.15);
+  --shadow-blue: 0 0 24px rgba(2,172,209,0.15);
 
-  --accent-dim: rgba(0, 126, 255, 0.08);
-  --accent-border: rgba(0, 126, 255, 0.2);
+  --accent-dim: rgba(2, 172, 209, 0.08);
+  --accent-border: rgba(2, 172, 209, 0.2);
 }
 
 /* ─── Reset ─── */

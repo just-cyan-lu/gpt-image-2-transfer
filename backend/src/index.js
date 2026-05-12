@@ -1,10 +1,8 @@
-import { config } from 'dotenv'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeFileSync, unlinkSync, createReadStream, existsSync } from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-config({ path: resolve(__dirname, '../../.env.local') })
 
 import Koa from 'koa'
 import Router from '@koa/router'
@@ -15,14 +13,13 @@ import {
   upsertConversation, upsertMessage,
   deleteConversation, deleteMessage, renameConversation,
   getMessageImageFile, IMAGES_DIR,
+  getConfig, saveConfig,
 } from './db.js'
 
 const app = new Koa()
 const router = new Router({ prefix: '/api' })
 
-const BASE_URL = (process.env.OPENAI_BASE_URL || '').replace(/\/$/, '')
-const API_KEY = process.env.OPENAI_API_KEY || ''
-const PORT = parseInt(process.env.PORT || '3001', 10)
+const PORT = 3001
 
 app.use(koaBody({ jsonLimit: '50mb' }))
 
@@ -94,15 +91,38 @@ router.get('/images/:filename', (ctx) => {
   ctx.body = createReadStream(filePath)
 })
 
+// ── 配置管理 ──────────────────────────────────────────────
+router.get('/config', (ctx) => {
+  ctx.body = getConfig()
+})
+
+router.post('/config', (ctx) => {
+  const { baseUrl, chatKey, imageKey } = ctx.request.body
+  saveConfig({ baseUrl, chatKey, imageKey })
+  ctx.body = { ok: true }
+})
+
 // ── 流式对话 ──────────────────────────────────────────────
 router.post('/chat', async (ctx) => {
+  console.log('[chat] received request:', ctx.request.body)
   const { model, messages } = ctx.request.body
+  const config = getConfig()
+  const apiKey = config.chatKey
+  const baseUrl = config.baseUrl
 
-  const upstream = await fetch(`${BASE_URL}/chat/completions`, {
+  if (!apiKey || !baseUrl) {
+    console.log('[chat] missing config')
+    ctx.status = 400
+    ctx.body = '请先在设置中配置 API 地址和聊天 Key'
+    return
+  }
+  console.log('[chat] forwarding to:', baseUrl)
+
+  const upstream = await fetch(`${baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({ model, messages, stream: true }),
   })
@@ -124,6 +144,15 @@ router.post('/chat', async (ctx) => {
 // ── 生图 / 编辑图 ─────────────────────────────────────────
 router.post('/image', async (ctx) => {
   const { prompt, images } = ctx.request.body
+  const config = getConfig()
+  const apiKey = config.imageKey
+  const baseUrl = config.baseUrl
+
+  if (!apiKey || !baseUrl) {
+    ctx.status = 400
+    ctx.body = '请先在设置中配置 API 地址和生图 Key'
+    return
+  }
 
   console.log('[image] request', { prompt, imageCount: images?.length ?? 0 })
 
@@ -141,17 +170,17 @@ router.post('/image', async (ctx) => {
       const blob = new Blob([bytes], { type: img.mimeType })
       form.append('image[]', blob, `image${i}.png`)
     })
-    upstream = await fetch(`${BASE_URL}/images/edits`, {
+    upstream = await fetch(`${baseUrl}/v1/images/edits`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${API_KEY}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
     })
   } else {
-    upstream = await fetch(`${BASE_URL}/images/generations`, {
+    upstream = await fetch(`${baseUrl}/v1/images/generations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({ model: 'gpt-image-2', prompt, n: 1, response_format: 'b64_json' }),
     })

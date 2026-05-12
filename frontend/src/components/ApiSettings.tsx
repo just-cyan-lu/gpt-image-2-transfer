@@ -6,19 +6,40 @@ interface Props {
 
 export default function ApiSettings({ onClose }: Props) {
   const [baseUrl, setBaseUrl] = useState('')
-  const [apiKey, setApiKey] = useState('')
+  const [chatKey, setChatKey] = useState('')
+  const [imageKey, setImageKey] = useState('')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    setBaseUrl(localStorage.getItem('api_base_url') || import.meta.env.VITE_API_BASE_URL || '')
-    setApiKey(localStorage.getItem('api_key') || import.meta.env.VITE_API_KEY || '')
+    // 从后端加载配置
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(config => {
+        setBaseUrl(config.baseUrl || '')
+        setChatKey(config.chatKey || '')
+        setImageKey(config.imageKey || '')
+      })
+      .catch(err => {
+        console.error('加载配置失败:', err)
+      })
   }, [])
 
-  const handleSave = () => {
-    localStorage.setItem('api_base_url', baseUrl.trim())
-    localStorage.setItem('api_key', apiKey.trim())
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+  const handleSave = async () => {
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          baseUrl: baseUrl.trim(),
+          chatKey: chatKey.trim(),
+          imageKey: imageKey.trim(),
+        }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    } catch (err) {
+      console.error('保存配置失败:', err)
+    }
   }
 
   return (
@@ -39,11 +60,20 @@ export default function ApiSettings({ onClose }: Props) {
             />
           </label>
           <label>
-            <span>API Key</span>
+            <span>聊天 API Key</span>
             <input
               type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
+              value={chatKey}
+              onChange={e => setChatKey(e.target.value)}
+              placeholder="sk-..."
+            />
+          </label>
+          <label>
+            <span>生图 API Key</span>
+            <input
+              type="password"
+              value={imageKey}
+              onChange={e => setImageKey(e.target.value)}
               placeholder="sk-..."
             />
           </label>

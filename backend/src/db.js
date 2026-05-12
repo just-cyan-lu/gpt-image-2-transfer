@@ -1,11 +1,12 @@
 import Database from 'better-sqlite3'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DB_PATH = resolve(__dirname, '../../data/chat.db')
 export const IMAGES_DIR = resolve(__dirname, '../../data/images')
+const CONFIG_PATH = resolve(__dirname, '../../data/config.json')
 
 mkdirSync(IMAGES_DIR, { recursive: true })
 
@@ -83,4 +84,22 @@ export function deleteMessage(id) {
 
 export function renameConversation(id, title) {
   db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(title, id)
+}
+
+// ── 配置管理 ──────────────────────────────────────────────
+
+export function getConfig() {
+  if (!existsSync(CONFIG_PATH)) {
+    return { baseUrl: '', chatKey: '', imageKey: '' }
+  }
+  try {
+    const content = readFileSync(CONFIG_PATH, 'utf-8')
+    return JSON.parse(content)
+  } catch {
+    return { baseUrl: '', chatKey: '', imageKey: '' }
+  }
+}
+
+export function saveConfig(config) {
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8')
 }

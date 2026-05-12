@@ -45,6 +45,7 @@ backend/
 data/                            # 运行时自动创建，不进 git
   chat.db                        # SQLite 数据库
   images/                        # 生成图片存储目录，文件名为 <msgId>.png
+  config.json                    # API 配置（baseUrl, chatKey, imageKey）
 ```
 
 ## 后端 API
@@ -59,6 +60,8 @@ data/                            # 运行时自动创建，不进 git
 | PUT | /api/messages/:id | 保存消息（含图片时写文件） |
 | DELETE | /api/messages/:id | 删除消息（含图片时删文件） |
 | GET | /api/images/:filename | 读取生成图片 |
+| GET | /api/config | 获取 API 配置 |
+| POST | /api/config | 保存 API 配置 |
 | POST | /api/chat | 流式对话代理 |
 | POST | /api/image | 生图/编辑图代理 |
 
@@ -66,20 +69,21 @@ data/                            # 运行时自动创建，不进 git
 
 - 对话和消息存 SQLite，启动时自动建库建表
 - 生成图片的 base64 **不存 DB**，写到 `data/images/<msgId>.png`，DB 只存文件名
+- API 配置（baseUrl, chatKey, imageKey）存 `data/config.json`，前端设置页面可修改
 - `data/` 目录不存在时后端启动会自动创建（`mkdirSync recursive`）
 - 前端切换对话时懒加载消息，流式回复结束后保存完整内容
 
-## 环境变量（.env.local）
+## API 配置
 
-```
-OPENAI_BASE_URL=   # 上游 API 地址
-OPENAI_API_KEY=    # API Key
-PORT=3001          # 后端端口
-```
+- 设置页面支持配置两个独立的 API Key：
+  - **聊天 API Key**：用于所有聊天模型（GPT-4、Claude 等）
+  - **生图 API Key**：用于 GPT Image 2 模型
+- 配置保存在后端 `data/config.json`，多设备共享
+- 首次使用需在设置页面配置 API 地址和 Key
 
 ## 主题与样式
 
-- 主色：`#007EFF`（蓝）、`#FF5700`（橙）、`#00F4FF`（青）
+- 主色：`#02ACD1`（蓝）、`#FF4C00`（橙）、`#B1FF62`（青）
 - 深色/浅色通过 `data-theme="light"` 切换 `html` 元素，CSS 变量自动响应
 - 默认浅色主题，切换按钮在聊天区右上角
 - **不要**在交互元素上使用渐变，统一用纯色 `var(--accent)`
@@ -94,3 +98,10 @@ PORT=3001          # 后端端口
 ## Markdown 渲染
 
 `MessageBubble.tsx` 内置轻量渲染，支持：代码块（含语言标签）、表格、`# ## ###` 标题、无序/有序列表、`**bold**`、`*italic*`、`` `inline code` ``。不引入任何外部 Markdown 库。
+
+
+## 部分名词定义
+- 对话列表：左侧的对话历史
+- 设置： 左下方的设置按钮及其弹出页面
+- 消息列表：右侧中部的消息列表
+- 发送框：右侧底部的发送框
