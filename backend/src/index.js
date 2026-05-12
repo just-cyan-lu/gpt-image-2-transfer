@@ -143,7 +143,7 @@ router.post('/chat', async (ctx) => {
 
 // ── 生图 / 编辑图 ─────────────────────────────────────────
 router.post('/image', async (ctx) => {
-  const { prompt, images } = ctx.request.body
+  const { prompt, images, size, quality } = ctx.request.body
   const config = getConfig()
   const apiKey = config.imageKey
   const baseUrl = config.baseUrl
@@ -154,7 +154,7 @@ router.post('/image', async (ctx) => {
     return
   }
 
-  console.log('[image] request', { prompt, imageCount: images?.length ?? 0 })
+  console.log('[image] request', { prompt, imageCount: images?.length ?? 0, size, quality })
 
   let upstream
 
@@ -165,6 +165,8 @@ router.post('/image', async (ctx) => {
     form.append('prompt', prompt)
     form.append('n', '1')
     form.append('response_format', 'b64_json')
+    if (size && size !== 'auto') form.append('size', size)
+    if (quality && quality !== 'auto') form.append('quality', quality)
     images.forEach((img, i) => {
       const bytes = Buffer.from(img.base64, 'base64')
       const blob = new Blob([bytes], { type: img.mimeType })
@@ -176,13 +178,16 @@ router.post('/image', async (ctx) => {
       body: form,
     })
   } else {
+    const body = { model: 'gpt-image-2', prompt, n: 1, response_format: 'b64_json' }
+    if (size && size !== 'auto') body.size = size
+    if (quality && quality !== 'auto') body.quality = quality
     upstream = await fetch(`${baseUrl}/v1/images/generations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ model: 'gpt-image-2', prompt, n: 1, response_format: 'b64_json' }),
+      body: JSON.stringify(body),
     })
   }
 

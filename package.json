@@ -6,6 +6,7 @@
     "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "install": "npm --prefix frontend install && npm --prefix backend install",
     "install:all": "npm --prefix frontend install && npm --prefix backend install"
   },
   "devDependencies": {

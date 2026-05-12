@@ -65,7 +65,7 @@ export default function App() {
     setActiveId(id)
   }, [])
 
-  const handleSend = useCallback(async ({ text, images, model }: SendPayload) => {
+  const handleSend = useCallback(async ({ text, images, model, mode, size, quality }: SendPayload) => {
     let currentActiveId = activeId
 
     const userMsg: Message = {
@@ -142,8 +142,8 @@ export default function App() {
     }
 
     try {
-      if (model === 'gpt-image-2') {
-        const b64 = await generateImage(text, images, abortRef.current.signal)
+      if (mode === 'image') {
+        const b64 = await generateImage(text, images, size, quality, abortRef.current.signal)
         await addAiMsg('', b64)
       } else {
         let added = false

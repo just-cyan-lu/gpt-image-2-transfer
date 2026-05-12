@@ -907,6 +907,42 @@ body {
   cursor: not-allowed;
 }
 
+/* 模式选择器 */
+.mode-select {
+  appearance: none;
+  height: 30px;
+  padding: 0 28px 0 10px;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%23999'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+
+.mode-select:hover:not(:disabled),
+.mode-select:focus:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+  background-color: rgba(0,164,252,0.04);
+}
+
+.mode-select:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mode-select option {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
 /* 模型选择器 */
 .model-select {
   appearance: none;
@@ -942,6 +978,43 @@ body {
   background: var(--bg-input);
   color: var(--text-primary);
 }
+
+/* 图片参数选择器（大小、质量） */
+.image-param-select {
+  appearance: none;
+  height: 30px;
+  padding: 0 28px 0 10px;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%23999'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+
+.image-param-select:hover:not(:disabled),
+.image-param-select:focus:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+  background-color: rgba(0,164,252,0.04);
+}
+
+.image-param-select:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.image-param-select option {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
 
 /* 发送按钮 */
 .send-btn {

@@ -137,12 +137,14 @@ export async function streamChat(
 export async function generateImage(
   prompt: string,
   images: { mimeType: string; base64: string }[],
+  size?: string,
+  quality?: string,
   signal?: AbortSignal,
 ): Promise<string> {
   const res = await fetch('/api/image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, images }),
+    body: JSON.stringify({ prompt, images, size, quality }),
     signal,
   })
 
