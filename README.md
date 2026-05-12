@@ -6,7 +6,7 @@
 
 ## 功能特性
 
-- 💬 流式对话，支持多种 AI 模型（GPT-4、Claude 等）
+- 💬 流式对话，仅支持openai
 - 🎨 图片生成与编辑（GPT Image 2）
 - 📝 对话历史本地持久化（SQLite）
 - 🌓 深色/浅色主题切换
@@ -19,7 +19,7 @@
 
 ```bash
 npm install
-npm run install:all
+npm run install
 ```
 
 ### 2. 配置 API
@@ -39,7 +39,7 @@ npm run dev
 ```
 
 启动后访问：
-- 前端：http://localhost:5566
+- 前端：http://localhost:5566 （只访问这个就可以了）
 - 后端：http://localhost:6677
 
 ## 项目结构
@@ -94,7 +94,7 @@ data/              # 运行时数据（自动创建）
 npm run dev              # 并发启动前后端
 npm run dev:frontend     # 仅启动前端
 npm run dev:backend      # 仅启动后端
-npm run install:all      # 安装所有依赖
+npm run install      # 安装所有依赖
 ```
 
 ## 注意事项
