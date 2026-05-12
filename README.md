@@ -20,7 +20,7 @@
 
 ```bash
 npm install
-npm run install:all
+npm run install
 ```
 
 ### 2. 配置 API
@@ -39,8 +39,8 @@ npm run dev
 ```
 
 启动后访问：
-- 前端：http://localhost:5566
-- 后端：http://localhost:6677
+- 前端：http://localhost:5566 (只访问前端即可)
+- 后端：http://localhost:6677 (后端用于转发，以及数据持久化)
 
 ## 项目结构
 
@@ -84,8 +84,18 @@ data/              # 运行时数据（自动创建）
 npm run dev              # 并发启动前后端
 npm run dev:frontend     # 仅启动前端
 npm run dev:backend      # 仅启动后端
-npm run install:all      # 安装所有依赖
+npm run install          # 安装所有依赖
 ```
+
+## 声明
+
+本项目是完全的 vibe coding，人类看一眼代码就会爆炸
+
+
+## author
+
+cyan
+
 
 ## License
 
