@@ -92,7 +92,7 @@ npm run install          # 安装所有依赖
 本项目是完全的 vibe coding，人类看一眼代码就会爆炸
 
 
-## author
+## Author
 
 cyan
 
