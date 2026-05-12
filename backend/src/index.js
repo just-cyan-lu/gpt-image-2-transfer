@@ -19,7 +19,7 @@ import {
 const app = new Koa()
 const router = new Router({ prefix: '/api' })
 
-const PORT = 3001
+const PORT = 6677
 
 app.use(koaBody({ jsonLimit: '50mb' }))
 
