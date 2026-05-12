@@ -136,7 +136,7 @@ export default function Sidebar({ conversations, activeId, collapsed, onSelect, 
       <div className="sidebar-header">
         <div className="logo">
           <div className="logo-icon"><LogoIcon /></div>
-          <span className="logo-text">Chat</span>
+          <span className="logo-text">GPT中转</span>
         </div>
         <button className="collapse-btn" onClick={onToggleCollapse} title={collapsed ? '展开菜单' : '收起菜单'}>
           <ChevronLeftIcon />

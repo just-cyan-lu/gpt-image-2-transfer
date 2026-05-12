@@ -68,22 +68,6 @@ export default function App() {
   const handleSend = useCallback(async ({ text, images, model }: SendPayload) => {
     let currentActiveId = activeId
 
-    if (!currentActiveId) {
-      const id = genId()
-      const title = text.slice(0, 20) || '新建对话'
-      const newConv: Conversation = {
-        id,
-        title,
-        preview: '',
-        messages: [],
-        updatedAt: new Date(),
-      }
-      setConversations(prev => [newConv, ...prev])
-      setActiveId(id)
-      currentActiveId = id
-      await saveConversation(newConv)
-    }
-
     const userMsg: Message = {
       id: genId(),
       role: 'user',
@@ -93,27 +77,44 @@ export default function App() {
       timestamp: new Date(),
     }
 
-    let updatedConv: Conversation | null = null
-    let currentHistory: Message[] = []
-    setConversations(prev => prev.map(c => {
-      if (c.id !== currentActiveId) return c
-      const messages = [...c.messages, userMsg]
-      currentHistory = c.messages
+    if (!currentActiveId) {
+      const id = genId()
+      const title = text.slice(0, 20) || '新建对话'
       const preview = text || (images.length > 0 ? `[图片 ×${images.length}]` : '')
-      updatedConv = {
-        ...c,
-        messages,
+      const newConv: Conversation = {
+        id,
+        title,
         preview: preview.slice(0, 40) + (preview.length > 40 ? '...' : ''),
-        title: c.title === '新建对话' ? (text.slice(0, 20) || '新建对话') : c.title,
+        messages: [userMsg],
         updatedAt: new Date(),
       }
-      return updatedConv
-    }))
-
-    if (updatedConv) {
-      await saveConversation(updatedConv)
-      await saveMessage(currentActiveId, userMsg)
+      setConversations(prev => [newConv, ...prev])
+      setActiveId(id)
+      currentActiveId = id
+      await saveConversation(newConv)
+      await saveMessage(id, userMsg)
+    } else {
+      let updatedConv: Conversation | null = null
+      setConversations(prev => prev.map(c => {
+        if (c.id !== currentActiveId) return c
+        const messages = [...c.messages, userMsg]
+        const preview = text || (images.length > 0 ? `[图片 ×${images.length}]` : '')
+        updatedConv = {
+          ...c,
+          messages,
+          preview: preview.slice(0, 40) + (preview.length > 40 ? '...' : ''),
+          title: c.title === '新建对话' ? (text.slice(0, 20) || '新建对话') : c.title,
+          updatedAt: new Date(),
+        }
+        return updatedConv
+      }))
+      if (updatedConv) {
+        await saveConversation(updatedConv)
+        await saveMessage(currentActiveId, userMsg)
+      }
     }
+
+    const currentHistory = conversations.find(c => c.id === currentActiveId)?.messages.slice(0, -1) ?? []
 
     setIsTyping(true)
     abortRef.current = new AbortController()
