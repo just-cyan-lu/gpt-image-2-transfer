@@ -54,7 +54,7 @@ router.delete('/conversations/:id', (ctx) => {
 })
 
 router.put('/messages/:id', (ctx) => {
-  const { conversationId, role, content, images, imageB64, model, timestamp } = ctx.request.body
+  const { conversationId, role, content, images, imageB64, model, size, quality, responseId, timestamp } = ctx.request.body
   let imageFile = null
   if (imageB64) {
     imageFile = `${ctx.params.id}.png`
@@ -68,6 +68,9 @@ router.put('/messages/:id', (ctx) => {
     images: images ? JSON.stringify(images) : null,
     imageFile,
     model: model ?? null,
+    size: size ?? null,
+    quality: quality ?? null,
+    responseId: responseId ?? null,
     timestamp: new Date(timestamp).getTime(),
   })
   ctx.body = { ok: true }
@@ -104,7 +107,7 @@ router.post('/config', (ctx) => {
 
 // ── 生图 / 编辑图 ─────────────────────────────────────────
 router.post('/image', async (ctx) => {
-  const { prompt, images, size, quality } = ctx.request.body
+  const { prompt, images, size, quality, response_id } = ctx.request.body
   const config = getConfig()
   const apiKey = config.imageKey
   const baseUrl = config.baseUrl
@@ -128,6 +131,7 @@ router.post('/image', async (ctx) => {
     form.append('response_format', 'b64_json')
     if (size && size !== 'auto') form.append('size', size)
     if (quality && quality !== 'auto') form.append('quality', quality)
+    if (response_id) form.append('response_id', response_id)
     images.forEach((img, i) => {
       const bytes = Buffer.from(img.base64, 'base64')
       const blob = new Blob([bytes], { type: img.mimeType })
@@ -142,6 +146,7 @@ router.post('/image', async (ctx) => {
     const body = { model: 'gpt-image-2', prompt, n: 1, response_format: 'b64_json' }
     if (size && size !== 'auto') body.size = size
     if (quality && quality !== 'auto') body.quality = quality
+    if (response_id) body.response_id = response_id
     upstream = await fetch(`${baseUrl}/v1/images/generations`, {
       method: 'POST',
       headers: {
@@ -162,7 +167,7 @@ router.post('/image', async (ctx) => {
 
   const json = await upstream.json()
   console.log('[image] response ok, b64_json length:', json.data[0].b64_json?.length)
-  ctx.body = { b64_json: json.data[0].b64_json }
+  ctx.body = { b64_json: json.data[0].b64_json, size: json.size, quality: json.quality, responseId: json.response_id }
 })
 
 app.use(router.routes()).use(router.allowedMethods())

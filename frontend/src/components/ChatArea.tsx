@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Message } from '../types'
+import { SendPayload } from './ChatInput'
 import MessageBubble from './MessageBubble'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   onToggleTheme: () => void
   onSuggestion: (text: string) => void
   onDeleteMessage: (id: string) => void
+  onImageEdit: (payload: SendPayload) => void
 }
 
 function SunIcon() {
@@ -52,7 +54,7 @@ const suggestions = [
   '极简主义风格的山脉剪影',
 ]
 
-export default function ChatArea({ messages, isGenerating, theme, onToggleTheme, onSuggestion, onDeleteMessage }: Props) {
+export default function ChatArea({ messages, isGenerating, theme, onToggleTheme, onSuggestion, onDeleteMessage, onImageEdit }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -89,7 +91,7 @@ export default function ChatArea({ messages, isGenerating, theme, onToggleTheme,
           </div>
         ) : (
           <>
-            {messages.map(msg => <MessageBubble key={msg.id} message={msg} onDelete={onDeleteMessage} />)}
+            {messages.map(msg => <MessageBubble key={msg.id} message={msg} onDelete={onDeleteMessage} onImageEdit={onImageEdit} />)}
             {isGenerating && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="message-row assistant">
                 <div className="message-avatar">

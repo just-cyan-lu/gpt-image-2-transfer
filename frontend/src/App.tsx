@@ -63,7 +63,8 @@ export default function App() {
     setActiveId(id)
   }, [])
 
-  const handleSend = useCallback(async ({ text, images, size, quality }: SendPayload) => {
+  const handleSend = useCallback(async (payload: SendPayload) => {
+    const { text, images, size, quality } = payload
     let currentActiveId = activeId
 
     const userMsg: Message = {
@@ -116,8 +117,8 @@ export default function App() {
 
     const aiMsgId = genId()
 
-    const addAiMsg = async (content: string, imageB64?: string) => {
-      const msg: Message = { id: aiMsgId, role: 'assistant', content, imageB64, timestamp: new Date() }
+    const addAiMsg = async (content: string, imageB64?: string, size?: string, quality?: string, responseId?: string) => {
+      const msg: Message = { id: aiMsgId, role: 'assistant', content, imageB64, size, quality, responseId, timestamp: new Date() }
       setConversations(prev => prev.map(c =>
         c.id === currentActiveId ? { ...c, messages: [...c.messages, msg] } : c
       ))
@@ -136,8 +137,8 @@ export default function App() {
     }
 
     try {
-      const b64 = await generateImage(text, images, size, quality, abortRef.current.signal)
-      await addAiMsg('', b64)
+      const result = await generateImage(text, images, size, quality, abortRef.current.signal, payload.responseId)
+      await addAiMsg('', result.b64_json, result.size, result.quality, result.responseId)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return
       const errText = err instanceof Error ? err.message : String(err)
@@ -199,6 +200,7 @@ export default function App() {
           onToggleTheme={toggleTheme}
           onSuggestion={handleSuggestion}
           onDeleteMessage={handleDeleteMessage}
+          onImageEdit={handleSend}
         />
         <ChatInput
           onSend={handleSend}

@@ -54,11 +54,12 @@ export async function generateImage(
   size?: string,
   quality?: string,
   signal?: AbortSignal,
-): Promise<string> {
+  responseId?: string,
+): Promise<{ b64_json: string; size?: string; quality?: string; responseId?: string }> {
   const res = await fetch('/api/image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, images, size, quality }),
+    body: JSON.stringify({ prompt, images, size, quality, response_id: responseId }),
     signal,
   })
 
@@ -67,6 +68,5 @@ export async function generateImage(
     throw new Error(`API error ${res.status}: ${err}`)
   }
 
-  const json = await res.json()
-  return json.b64_json as string
+  return res.json()
 }

@@ -34,6 +34,11 @@ db.exec(`
   PRAGMA foreign_keys = ON;
 `)
 
+// 迁移：补充 size / quality / response_id 列（旧库无此列时静默添加）
+for (const col of ['size', 'quality', 'response_id']) {
+  try { db.exec(`ALTER TABLE messages ADD COLUMN ${col} TEXT`) } catch {}
+}
+
 export function listConversations() {
   return db.prepare(`
     SELECT id, title, preview, updated_at AS updatedAt
@@ -44,7 +49,7 @@ export function listConversations() {
 export function getMessages(conversationId) {
   return db.prepare(`
     SELECT id, conversation_id AS conversationId, role, content,
-           images, image_file AS imageFile, model, timestamp
+           images, image_file AS imageFile, model, size, quality, response_id AS responseId, timestamp
     FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC
   `).all(conversationId)
 }
@@ -62,11 +67,14 @@ export function upsertConversation(conv) {
 
 export function upsertMessage(msg) {
   db.prepare(`
-    INSERT INTO messages (id, conversation_id, role, content, images, image_file, model, timestamp)
-    VALUES (@id, @conversationId, @role, @content, @images, @imageFile, @model, @timestamp)
+    INSERT INTO messages (id, conversation_id, role, content, images, image_file, model, size, quality, response_id, timestamp)
+    VALUES (@id, @conversationId, @role, @content, @images, @imageFile, @model, @size, @quality, @responseId, @timestamp)
     ON CONFLICT(id) DO UPDATE SET
       content = excluded.content,
-      image_file = excluded.image_file
+      image_file = excluded.image_file,
+      size = excluded.size,
+      quality = excluded.quality,
+      response_id = excluded.response_id
   `).run(msg)
 }
 

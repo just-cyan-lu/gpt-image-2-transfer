@@ -1,8 +1,8 @@
 /* ─── CSS Variables ─── */
 :root {
-  --orange: #FF4C00;
-  --cyan: #B1FF62;
-  --blue: #02ACD1;
+  --primary: #6A75A5;
+  --secondary: #886D96;
+  --tertiary: #73768B;
 
   /* Dark theme */
   --bg-primary: #0D0F14;
@@ -22,11 +22,11 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.6);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.7);
-  --shadow-blue: 0 0 24px rgba(2,172,209,0.2);
+  --shadow-blue: 0 0 24px rgba(106,117,165,0.2);
 
-  --accent: #02ACD1;
-  --accent-dim: rgba(2, 172, 209, 0.12);
-  --accent-border: rgba(2, 172, 209, 0.25);
+  --accent: #6A75A5;
+  --accent-dim: rgba(106, 117, 165, 0.12);
+  --accent-border: rgba(106, 117, 165, 0.25);
 }
 
 [data-theme="light"] {
@@ -47,10 +47,10 @@
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
-  --shadow-blue: 0 0 24px rgba(2,172,209,0.15);
+  --shadow-blue: 0 0 24px rgba(106,117,165,0.15);
 
-  --accent-dim: rgba(2, 172, 209, 0.08);
-  --accent-border: rgba(2, 172, 209, 0.2);
+  --accent-dim: rgba(106, 117, 165, 0.08);
+  --accent-border: rgba(106, 117, 165, 0.2);
 }
 
 /* ─── Reset ─── */
@@ -723,7 +723,7 @@ body {
   background: var(--bg-card);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-right: 2px solid var(--orange);
+  border-right: 2px solid var(--secondary);
   border-radius: 10px 2px 10px 10px;
 }
 
@@ -1127,7 +1127,7 @@ kbd {
   flex-direction: column;
   gap: 4px;
 }
-.message-bubble .md-ul li::marker { color: var(--orange); }
+.message-bubble .md-ul li::marker { color: var(--secondary); }
 .message-bubble .md-ol li::marker { color: var(--accent); }
 
 .inline-code {
@@ -1302,6 +1302,91 @@ kbd {
   max-height: 512px;
   border-radius: 8px;
   display: block;
+}
+
+.image-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.image-meta span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 2px 7px;
+  letter-spacing: 0.02em;
+}
+
+.clickable-image {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.clickable-image:hover {
+  opacity: 0.88;
+}
+
+/* ── Inline edit input ── */
+.inline-edit-wrap {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.inline-edit-inner {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.inline-edit-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.inline-edit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.inline-edit-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.inline-edit-close-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.inline-edit-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* ── Conversation rename input ── */

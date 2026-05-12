@@ -6,6 +6,7 @@ export interface SendPayload {
   images: ImageAttachment[]
   size?: string
   quality?: string
+  responseId?: string  // 图片编辑时传入来源图片的 response_id
 }
 
 interface Props {
