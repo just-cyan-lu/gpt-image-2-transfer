@@ -1356,6 +1356,13 @@ kbd {
   box-sizing: border-box;
 }
 
+.inline-edit-error {
+  color: #c0392b;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
 .inline-edit-toolbar {
   display: flex;
   align-items: center;

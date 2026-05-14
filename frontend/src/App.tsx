@@ -65,6 +65,7 @@ export default function App() {
 
   const handleSend = useCallback(async (payload: SendPayload) => {
     const { text, images, size, quality } = payload
+    const upstreamImages = [...(payload.sourceImages ?? []), ...images]
     let currentActiveId = activeId
 
     const userMsg: Message = {
@@ -137,7 +138,7 @@ export default function App() {
     }
 
     try {
-      const result = await generateImage(text, images, size, quality, abortRef.current.signal, payload.responseId)
+      const result = await generateImage(text, upstreamImages, size, quality, abortRef.current.signal, payload.responseId)
       await addAiMsg('', result.b64_json, result.size, result.quality, result.responseId)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return

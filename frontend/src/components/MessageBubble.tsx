@@ -1,5 +1,5 @@
 import { useState, useRef, KeyboardEvent } from 'react'
-import { Message } from '../types'
+import { ImageAttachment, Message } from '../types'
 import { SendPayload } from './ChatInput'
 
 interface Props {
@@ -77,15 +77,50 @@ function ImageIcon() {
   )
 }
 
-function InlineEditInput({ responseId, onSend, onClose }: {
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+function createSourceImageLoader(message: Message) {
+  return async (): Promise<ImageAttachment | null> => {
+    if (message.imageB64) {
+      return {
+        name: `${message.id}.png`,
+        mimeType: 'image/png',
+        base64: message.imageB64,
+      }
+    }
+
+    if (!message.imageFile) return null
+
+    const res = await fetch(`/api/images/${message.imageFile}`)
+    if (!res.ok) throw new Error(`读取图片失败：${res.status}`)
+    const blob = await res.blob()
+    return {
+      name: message.imageFile,
+      mimeType: blob.type || 'image/png',
+      base64: await blobToBase64(blob),
+    }
+  }
+}
+
+function InlineEditInput({ responseId, getSourceImage, onSend, onClose }: {
   responseId?: string
+  getSourceImage?: () => Promise<ImageAttachment | null>
   onSend: (payload: SendPayload) => void
   onClose: () => void
 }) {
   const [text, setText] = useState('')
   const [size, setSize] = useState('auto')
   const [quality, setQuality] = useState('auto')
-  const [images, setImages] = useState<import('../types').ImageAttachment[]>([])
+  const [images, setImages] = useState<ImageAttachment[]>([])
+  const [isPreparing, setIsPreparing] = useState(false)
+  const [error, setError] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -110,12 +145,27 @@ function InlineEditInput({ responseId, onSend, onClose }: {
 
   const removeImage = (idx: number) => setImages(prev => prev.filter((_, i) => i !== idx))
 
-  const canSend = text.trim().length > 0 || images.length > 0
+  const canSend = !isPreparing && (text.trim().length > 0 || images.length > 0 || !!getSourceImage)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!canSend) return
-    onSend({ text: text.trim(), images, size, quality, responseId })
-    onClose()
+    setError('')
+    setIsPreparing(true)
+    try {
+      const sourceImage = await getSourceImage?.()
+      onSend({
+        text: text.trim(),
+        images,
+        sourceImages: sourceImage ? [sourceImage] : undefined,
+        size,
+        quality,
+        responseId,
+      })
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '读取图片失败')
+      setIsPreparing(false)
+    }
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -146,6 +196,7 @@ function InlineEditInput({ responseId, onSend, onClose }: {
           onChange={e => { setText(e.target.value); autoResize() }}
           onKeyDown={handleKeyDown}
         />
+        {error && <div className="inline-edit-error">{error}</div>}
         <div className="inline-edit-toolbar">
           <select className="image-param-select" value={size} onChange={e => setSize(e.target.value)} title="图片大小">
             <option value="auto">自动</option>
@@ -167,7 +218,7 @@ function InlineEditInput({ responseId, onSend, onClose }: {
             <ImageIcon /><span>参考图</span>
           </button>
           <div className="toolbar-spacer" />
-          <button className="inline-edit-close-btn" onClick={onClose} title="取消"><CloseIcon /></button>
+          <button className="inline-edit-close-btn" onClick={onClose} disabled={isPreparing} title="取消"><CloseIcon /></button>
           <button className="send-btn" onClick={handleSend} disabled={!canSend} title="生成">
             <SendIcon /><span>生成</span>
           </button>
@@ -220,6 +271,7 @@ export default function MessageBubble({ message, onDelete, onImageEdit }: Props)
               {showInline && (
                 <InlineEditInput
                   responseId={message.responseId}
+                  getSourceImage={createSourceImageLoader(message)}
                   onSend={onImageEdit}
                   onClose={() => setShowInline(false)}
                 />
@@ -238,6 +290,7 @@ export default function MessageBubble({ message, onDelete, onImageEdit }: Props)
               {showInline && (
                 <InlineEditInput
                   responseId={message.responseId}
+                  getSourceImage={createSourceImageLoader(message)}
                   onSend={onImageEdit}
                   onClose={() => setShowInline(false)}
                 />
