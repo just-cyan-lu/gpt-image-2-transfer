@@ -3,7 +3,7 @@
 
 基于 GPT Image 2 的图片生成与编辑工具，React + Koa 前后端分离，支持文生图和图生图（参考图编辑）。
 
-![Demo](demo.png)
+![Demo](demo.jpg)
 
 ## 功能特性
 
