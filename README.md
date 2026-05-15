@@ -76,7 +76,7 @@ data/              # 运行时数据（自动创建）
 ## 技术栈
 
 - 前端：React 19 + TypeScript + Vite
-- 后端：Koa 3 + better-sqlite3 + node-fetch
+- 后端：Koa 3 + better-sqlite3 + openai SDK
 
 ## 开发命令
 
